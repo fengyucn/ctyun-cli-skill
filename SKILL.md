@@ -1,6 +1,6 @@
 ---
 name: ctyun-cli
-description: "天翼云CLI工具 - 企业级命令行工具，帮助您轻松管理天翼云资源。支持ECS、VPC、EBS、ELB、CCE、Redis、监控、账务等11大服务模块，覆盖217+个API，210+个命令。"
+description: "天翼云CLI工具 - 企业级命令行工具，帮助您轻松管理天翼云资源。支持ECS、VPC、EBS、ELB、CCE、Redis、监控、账务等11大服务模块，覆盖222+个API，225+个命令。"
 homepage: https://github.com/fengyucn/ctyun-cli
 pypi: https://pypi.org/project/ctyun-cli/
 metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"install":[{"id":"pip","kind":"pip","package":"ctyun-cli","bins":["ctyun-cli"],"label":"Install ctyun-cli (pip)"}]}}
@@ -10,7 +10,7 @@ metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"insta
 
 天翼云 CLI 工具，功能强大的企业级命令行工具，帮助您轻松管理天翼云资源。支持云服务器(ECS)、监控告警、安全防护、Redis分布式缓存、弹性负载均衡(ELB)、容器引擎(CCE)、VPC网络、费用查询等核心功能。
 
-**规模统计：** 35,000+行代码，217+个API，210+个命令，11大服务模块
+**规模统计：** 36,000+行代码，222+个API，225+个命令，11大服务模块
 
 ## 安装
 
@@ -262,6 +262,32 @@ ctyun-cli cce configmap --help
 ctyun-cli cce tag --help
 ```
 
+### Namespace 命名空间管理
+```bash
+# 列出命名空间
+ctyun-cli cce namespace list --cluster-id CLUSTER_ID --region-id REGION_ID
+
+# 查询命名空间详情
+ctyun-cli cce namespace show --cluster-id CLUSTER_ID --namespace-name default --region-id REGION_ID
+
+# 创建命名空间
+ctyun-cli cce namespace create --cluster-id CLUSTER_ID --region-id REGION_ID --namespace-yaml "apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace"
+
+# 更新命名空间
+ctyun-cli cce namespace update --cluster-id CLUSTER_ID --namespace-name my-namespace --region-id REGION_ID --namespace-yaml "apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+  labels:
+    env: production"
+
+# 删除命名空间
+ctyun-cli cce namespace delete --cluster-id CLUSTER_ID --namespace-name my-namespace --region-id REGION_ID
+```
+
 ## Redis 分布式缓存服务
 
 ### 列出 Redis 实例
@@ -507,8 +533,12 @@ ctyun-cli ecs list --profile production
 
 ## 版本信息
 
-- **当前版本**: v1.7.16
+- **当前版本**: v1.8.1 (2026-03-30)
 - **开源协议**: MIT
 - **Python 要求**: Python 3.8+
-- **API 覆盖**: 217+ 个 API
-- **命令数量**: 210+ 个命令
+- **API 覆盖**: 222+ 个 API
+- **命令数量**: 225+ 个命令
+- **最新功能**:
+  - 🚀 CCE Namespace 命名空间管理（5个新API）
+  - 支持 YAML 格式资源配置
+  - 支持 labelSelector/fieldSelector 过滤
