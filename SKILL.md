@@ -1,6 +1,6 @@
 ---
 name: ctyun-cli
-description: "天翼云CLI工具 - 企业级命令行工具，帮助您轻松管理天翼云资源。支持ECS、VPC、EBS、ELB、CCE、Redis、监控、账务等11大服务模块，覆盖222+个API，225+个命令。"
+description: "天翼云CLI工具 - 企业级命令行工具，帮助您轻松管理天翼云资源。支持ECS、VPC、EBS、ELB、CCE、Redis、Kafka、CSS、EMR、监控、账务等15+服务模块，覆盖311+个API，217+个命令。"
 homepage: https://github.com/fengyucn/ctyun-cli
 pypi: https://pypi.org/project/ctyun-cli/
 metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"install":[{"id":"pip","kind":"pip","package":"ctyun-cli","bins":["ctyun-cli"],"label":"Install ctyun-cli (pip)"}]}}
@@ -10,7 +10,7 @@ metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"insta
 
 天翼云 CLI 工具，功能强大的企业级命令行工具，帮助您轻松管理天翼云资源。支持云服务器(ECS)、监控告警、安全防护、Redis分布式缓存、弹性负载均衡(ELB)、容器引擎(CCE)、VPC网络、费用查询等核心功能。
 
-**规模统计：** 36,000+行代码，222+个API，225+个命令，11大服务模块
+**规模统计：** 39,000+行代码，311+个API，217+个命令，15+大服务模块
 
 ## 安装
 
@@ -298,6 +298,24 @@ ctyun-cli redis list
 ### 查询实例详情
 ```bash
 ctyun-cli redis describe --instance-id YOUR_INSTANCE_ID
+ctyun-cli redis describe -i YOUR_INSTANCE_ID -f table
+```
+
+### 查询实例网络信息
+```bash
+ctyun-cli redis network --instance-id YOUR_INSTANCE_ID
+ctyun-cli redis network -i YOUR_INSTANCE_ID --region-id RESOURCE_POOL_ID
+```
+
+### 查询实例逻辑拓扑
+```bash
+ctyun-cli redis topology --instance-id YOUR_INSTANCE_ID
+```
+
+### 批量查询集群节点信息
+```bash
+ctyun-cli redis cluster-nodes
+ctyun-cli redis cluster-nodes --page 1 --size 20
 ```
 
 ### 创建 Redis 实例
@@ -308,6 +326,12 @@ ctyun-cli redis create-instance --help
 ### 查询可用区
 ```bash
 ctyun-cli redis zones
+```
+
+### 查询引擎版本
+```bash
+ctyun-cli redis engine-version --instance-id INSTANCE_ID
+ctyun-cli redis instance-version --instance-id INSTANCE_ID
 ```
 
 ### 监控数据查询
@@ -475,6 +499,108 @@ ctyun-cli cda health-check --help
 ctyun-cli cda account-auth --help
 ```
 
+## 分布式消息服务 (Kafka) 管理
+
+### 查询实例列表
+```bash
+ctyun-cli kafka list --region-id RESOURCE_POOL_ID
+ctyun-cli kafka list -r xxx --name test --exact-match
+ctyun-cli kafka list -r xxx --status 1 --page 1 --size 20
+```
+
+### 查看实例节点状态
+```bash
+ctyun-cli kafka node-status --region-id RESOURCE_POOL_ID --instance-id INSTANCE_ID
+```
+
+### 查询弹性IP列表
+```bash
+ctyun-cli kafka floating-ips --region-id RESOURCE_POOL_ID
+```
+
+### 获取实例配置
+```bash
+ctyun-cli kafka config --region-id RESOURCE_POOL_ID --instance-id INSTANCE_ID
+```
+
+## 云搜索服务 (CSS) 管理
+
+### 查询实例列表
+```bash
+ctyun-cli css list --region-id RESOURCE_POOL_ID --type 1
+ctyun-cli css list -r xxx --name test
+```
+
+### 查询实例详情
+```bash
+ctyun-cli css describe --cluster-id CLUSTER_ID
+```
+
+### 查询 Logstash 实例列表
+```bash
+ctyun-cli css logstash-list --region-id RESOURCE_POOL_ID
+```
+
+## 翼 MapReduce (EMR) 管理
+
+### 查询集群列表
+```bash
+ctyun-cli emr list --region-id RESOURCE_POOL_ID
+ctyun-cli emr list -r xxx --name test --v2
+```
+
+### 查询集群详情
+```bash
+ctyun-cli emr describe --cluster-id CLUSTER_ID
+ctyun-cli emr describe --cluster-id CLUSTER_ID --v2
+```
+
+### 查询节点组信息
+```bash
+ctyun-cli emr node-groups --cluster-id CLUSTER_ID
+ctyun-cli emr node-groups --cluster-id CLUSTER_ID --v2
+```
+
+### 查询节点组详情
+```bash
+ctyun-cli emr node-detail --cluster-id CLUSTER_ID
+ctyun-cli emr node-detail --cluster-id CLUSTER_ID --node-state 8
+```
+
+### 查询 Hive 元数据概览
+```bash
+ctyun-cli emr meta-overview --cluster-id CLUSTER_ID
+```
+
+### 查询 Hive 表元数据
+```bash
+ctyun-cli emr meta-table --cluster-id CLUSTER_ID --database test_db --table test_table
+```
+
+## 云日志服务 (LTS) 管理
+
+```bash
+ctyun-cli lts --help
+```
+
+## 弹性文件服务 (SFS) 管理
+
+```bash
+ctyun-cli sfs --help
+```
+
+## 海量文件服务 (OceanFS) 管理
+
+```bash
+ctyun-cli oceanfs --help
+```
+
+## 边缘安全加速平台 (Aone) 管理
+
+```bash
+ctyun-cli aone --help
+```
+
 ## 网络管理
 
 ```bash
@@ -533,12 +659,15 @@ ctyun-cli ecs list --profile production
 
 ## 版本信息
 
-- **当前版本**: v1.8.1 (2026-03-30)
+- **当前版本**: v1.12.0 (2026-04-30)
 - **开源协议**: MIT
 - **Python 要求**: Python 3.8+
-- **API 覆盖**: 222+ 个 API
-- **命令数量**: 225+ 个命令
+- **API 覆盖**: 311+ 个 API
+- **命令数量**: 217+ 个命令
+- **服务模块**: 15+ 大服务模块
 - **最新功能**:
-  - 🚀 CCE Namespace 命名空间管理（5个新API）
-  - 支持 YAML 格式资源配置
-  - 支持 labelSelector/fieldSelector 过滤
+  - 🆕 EMR（翼MapReduce）模块：集群/节点组/元数据管理共 8 个 API
+  - 🆕 CSS（云搜索服务）模块：OpenSearch/Elasticsearch/Logstash 管理
+  - 🆕 Kafka（分布式消息服务）模块：实例/节点/弹性IP/配置管理
+  - 🆕 LTS/SFS/OceanFS/Aone 模块脚手架
+  - 🎯 Redis 模块完善：新增 topology/cluster-nodes 命令，修复 network/describe 命令
