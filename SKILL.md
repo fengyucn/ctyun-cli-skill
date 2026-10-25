@@ -1,6 +1,6 @@
 ---
 name: ctyun-cli
-description: "天翼云CLI工具 - 企业级命令行工具，帮助您轻松管理天翼云资源。支持ECS、VPC、EBS、ELB、CCE、Redis、MySQL、Kafka、CSS、EMR、监控、账务、IAM、Aone、CloudPC、AIServer、Audit、IMS、APM应用性能监控、LTS、SFS、OceanFS、ZOS、DPS物理机、安全卫士、云间高速EC、微服务引擎MSE、云防火墙CFW、SWR容器镜像服务等31+服务模块，覆盖1,110+个API，1,056+个命令。"
+description: "天翼云 CLI 工具（ctyun-cli）—— 查询与运维天翼云/China Telecom Cloud 资源的命令行，覆盖 ECS 云主机、VPC 网络与 EIP、EBS 云硬盘、ELB 负载均衡、CCE 容器集群、Redis 缓存、MySQL、Kafka、监控指标与告警、账务账单与消费、IAM 企业项目、APM 应用性能、LTS 日志检索、ZOS 对象存储、SFS/OceanFS 存储、DPS 物理机、Aone 加速、MSE 微服务、CDA 云专线、CFW 云防火墙、SWR 容器镜像等 31+ 服务模块、1,110+ API、1,056+ 命令。当用户要查询/巡检/盘点/排查天翼云资源，要查云主机、VPC、弹性公网 IP、云硬盘、负载均衡、容器集群、Redis 实例、监控告警、账单消费、企业项目、日志、对象存储、云专线、防火墙、镜像，或要把天翼云数据批量导出为 JSON/表格做二次处理时使用。"
 homepage: https://github.com/fengyucn/ctyun-cli
 pypi: https://pypi.org/project/ctyun-cli/
 metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"install":[{"id":"pip","kind":"pip","package":"ctyun-cli","bins":["ctyun-cli"],"label":"Install ctyun-cli (pip)"}]}}
@@ -11,6 +11,330 @@ metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"insta
 天翼云 CLI 工具，功能强大的企业级命令行工具，帮助您轻松管理天翼云资源。支持云服务器(ECS)、监控告警、安全防护、Redis分布式缓存、弹性负载均衡(ELB)、容器引擎(CCE)、VPC网络、费用查询等核心功能。
 
 **规模统计：** 71,000+行代码，1,110+个API，1,056+个命令，31+大服务模块
+
+## 阅读路径
+
+本文件按"先结论、后细节"分层组织，按需读取，不必通读：
+
+| 层级 | 章节 | 什么时候看 |
+| --- | --- | --- |
+| L0 结论层 | [快速开始](#快速开始5-分钟) · [场景速查表](#场景速查表我要做-x用哪个命令) · [模块索引](#模块索引) · [能力边界与使用约束](#能力边界与使用约束) | 接到"帮我查 XX 资源"的任务，先读这四节即可开工 |
+| L1 排错层 | [异常处理与错误排查](#异常处理与错误排查) · [反模式与常见问题](#反模式与常见问题-faq) | 命令报错、结果为空、JSON 解析失败、怀疑数据不可信 |
+| L2 参考层 | [模块索引](#模块索引) → 对应模块小节 | 已知要查什么，按模块小节精确取参数 |
+| L3 附录 | [询价](#询价--价格查询) · [使用技巧](#使用技巧) · [注意事项](#注意事项) · [版本信息](#版本信息) | 询价、脚本集成、版本核对 |
+
+> 判断标准：只要任务能靠"场景速查表"定位到命令，就不必往下读；只有在参数报错、结果异常或需要精确字段名时，才进入 L1/L2。
+
+## 快速开始（5 分钟）
+
+```bash
+# 1) 安装
+pip install ctyun-cli                 # 或 pipx install ctyun-cli
+
+# 2) 配置（二选一）
+export CTYUN_ACCESS_KEY=xxx CTYUN_SECRET_KEY=xxx     # 环境变量（推荐，不落盘）
+ctyun-cli configure --access-key xxx --secret-key xxx --region cn-north-1
+
+# 3) 自检
+ctyun-cli show-config                  # 确认 region / endpoint / 超时 / 重试
+ctyun-cli --help                       # 33 个模块分组 + 5 个工具命令
+
+# 4) 第一条查询
+ctyun-cli ecs list --region-id 200000001852 --page-size 5
+
+# 5) 脚本化（JSON 放在子命令之后）
+ctyun-cli ecs list --region-id 200000001852 --page-size 5 --output json
+```
+
+完整说明见 [安装](#安装) 与 [配置与认证](#配置与认证)。
+
+### 两条最容易踩的规则
+
+1. `--region-id` 传**资源池 ID**（如 `200000001852`），`--region` 传**区域名**（如 `cn-north-1`）。两者混用会查不到数据。
+2. `--output` 的位置取决于命令：命令自带该选项时写在**子命令之后**（`ecs list ... --output json`）；命令没有该选项时写在**模块之前**（`ctyun-cli --output json cda qos list ...`）。不确定就先 `--help` 看 Options 里有没有 `--output`。
+
+### 输出长什么样
+
+表格输出（首行是总量，实例 ID 完整不截断）：
+
+```
+$ ctyun-cli ecs list --region-id 200000001852 --page-size 2
+云主机列表 (总计: 451 台, 当前页: 2 台, 第1/226页)
+
++--------------------------------------+------------------+---------+---------------+----------------+-------------------------+----------------------+
+| 实例ID                               | 实例名称         | 状态    | IP地址        | 规格           | 镜像                    | 到期时间             |
++======================================+==================+=========+===============+================+=========================+======================+
+| b2af5dc1-bf2d-2851-a36b-d54a80b09c38 | cld-t-ty0119-NG  | running | 10.217.17.144 | hs1.small.1    | nginx-image-xin-6.26    | 2027-01-11T06:35:26Z |
+|                                      |                  |         |               | 1C1G           |                         |                      |
++--------------------------------------+------------------+---------+---------------+----------------+-------------------------+----------------------+
+| 3c981fc4-653e-ca53-5b11-5b7c6cd06958 | cld-t-ty00706-NG | running | 10.217.16.141 | hs1.small.1    | nginx-image-xinzheng... | 2026-11-26T05:45:16Z |
+|                                      |                  |         |               | 1C1G           |                         |                      |
++--------------------------------------+------------------+---------+---------------+----------------+-------------------------+----------------------+
+
+提示: 使用 --page 参数查看其他页
+```
+
+JSON 输出（`--output json`，供脚本消费；字段较多，此处仅摘录关键项）：
+
+```
+$ ctyun-cli ecs list --region-id 200000001852 --page-size 1 --output json
+[
+  {
+    "azName": "cn-huabei2-tj1A-public-ctcloud",
+    "expiredTime": "2027-01-11T06:35:26Z",
+    "projectID": "6c97c94e8e3948cf959bfeb737039a59",
+    "instanceID": "b2af5dc1-bf2d-2851-a36b-d54a80b09c38",
+    "displayName": "cld-t-ty0119-NG",
+    "instanceStatus": "running",
+    "onDemand": false
+  }
+]
+```
+
+> 两种输出前面都会带 1~2 行 INFO 日志（写到 stdout），脚本解析请先剥掉，详见 [反模式与常见问题](#反模式与常见问题-faq)。
+
+## 场景速查表（我要做 X，用哪个命令）
+
+| # | 场景 | 命令 | 关键参数 | 说明 |
+| --- | --- | --- | --- | --- |
+| 1 | 盘点某资源池的全部云主机 | `ecs list` | `--region-id` `--page-size` | 表头给出"总计 N 台"，JSON 里是 `totalCount` |
+| 2 | 看主机数量/到期/容量汇总 | `ecs statistics` | `--region-id` | 数量、CPU 核数、内存 GB |
+| 3 | 查单台主机详情 | `ecs detail` | `--instance-id` | |
+| 4 | 批量查多台主机 | `ecs multidetail` | `--instance-ids` | 逗号分隔 |
+| 5 | 查主机网卡与 EIP 绑定关系 | `ecs list-ports` | `--device-id` 或 `--subnet-id` | 查"某内网 IP 的 EIP"首选 |
+| 6 | 查可用区 / 资源池 | `ecs get-availability-zones-details`、`ecs regions` | | |
+| 7 | 查 VPC / 子网 | `vpc list`、`vpc subnet list` | `--vpc-id` | |
+| 8 | 查 EIP 及状态 | `vpc eip list`、`vpc eip detail` | `--eip-id` | |
+| 9 | 查安全组及规则 | `vpc security-group list`、`vpc security-group rules` | `--security-group-id` | |
+| 10 | 查云硬盘 / 快照 | `ebs list`、`ebs info`、`ebs snapshots` | `--disk-id` | `list-by-name` 按名称查 |
+| 11 | 查负载均衡器 / 监听器 / 目标组 | `elb loadbalancer list`、`elb listener list`、`elb targetgroup list` | `--loadbalancer-id` | |
+| 12 | 查容器集群 / 节点 / Pod | `cce list-clusters`、`cce list-nodes`、`cce list-pods` | `--cluster-id` | |
+| 13 | 取 Kubeconfig 接入集群 | `cce get-kubeconfig` | `--cluster-id` | |
+| 14 | 查 Redis 实例 / 详情 | `redis list`、`redis describe` | `-i` / `--instance-id` | |
+| 15 | 查 Redis 监控 / 慢日志 | `redis monitor-items-v2`、`redis slow-log` | `--prod-inst-id` | |
+| 16 | 查 Kafka / MySQL 实例 | `kafka list`、`ctmysql list` | `--region-id` | |
+| 17 | 查监控指标 / 告警 | `monitor query-latest-metric-data`、`monitor query-alarm-rules`、`monitor query-alert-history` | `--region-id` | 告警定位用 `query-alarm-top-resource` |
+| 18 | 查账单 / 消费汇总 | `billing bill-summary <账期>`、`billing bill-list` | 账期 `YYYYMM` | |
+| 19 | 查新版账单明细（包周期+按需合并） | `billing product-cycle-v2`、`billing resource-detail-v2`、`billing usage-detail-v2` | `--region-id` | 支持 `--group-by-day` |
+| 20 | 查企业项目 | `iam list-projects` | `--account-id` | |
+| 21 | 查镜像 | `ims describe`、`ims list-available` | | |
+| 22 | 查对象存储桶 / 对象 | `zos list-buckets`、`zos list-objects` | `--region-id` | |
+| 23 | 检索日志 | `lts search logs-v1`、`lts unit list-v1` | `--region-id` | 支持 SQL 分析语句与游标翻页 |
+| 24 | 查云专线（网关/专线/路由/QOS） | `cda gateway list`、`cda physical-line list`、`cda static-route list`、`cda qos list` | `--region-id` `--line-id` | 网关类需 `--account`；实际字段为 `vrfName` |
+| 25 | 查云防火墙资产 / 防护策略 | `cfw asset list`、`cfw policy list` | `--region-id` | |
+| 26 | 查容器镜像 | `swr list-instances`、`swr list-repositories` | `--region-id` | |
+| 27 | 查应用性能 / 调用链 | `apm app list`、`apm trace list` | `--region-id` | |
+| 28 | 查物理机 | `dps list`、`dps describe` | `--region-id` | |
+| 29 | 查微服务引擎 / Nacos | `mse instance list`、`mse nacos service list` | `--region-id` | |
+| 30 | 询价（新购/续订/变配） | 见 [询价 / 价格查询](#询价--价格查询) | | 8 个模块 41+ 个询价 API |
+| 31 | 清理本地缓存 | `clear-cache` | | |
+| 32 | 自检配置 / 连通性 | `show-config`、`test` | | `test` 只校验配置与客户端初始化，不发真实请求 |
+
+## 模块索引
+
+按模块定位命令小节：
+
+| 模块 | 命令组 | 小节 |
+| --- | --- | --- |
+| 云服务器 | `ecs` | [云服务器 (ECS) 管理](#云服务器-ecs-管理) |
+| 虚拟私有云 | `vpc` | [虚拟私有云 (VPC) 管理](#虚拟私有云-vpc-管理) |
+| 云硬盘 | `ebs` | [云硬盘 (EBS) 管理](#云硬盘-ebs-管理) |
+| 弹性负载均衡 | `elb` | [弹性负载均衡 (ELB) 管理](#弹性负载均衡-elb-管理) |
+| 容器引擎 | `cce` | [容器引擎 (CCE) 管理](#容器引擎-cce-管理) |
+| 分布式缓存 | `redis` | [Redis 分布式缓存服务](#redis-分布式缓存服务) |
+| 云监控 | `monitor` | [云监控服务管理](#云监控服务管理) |
+| 账务中心 | `billing` | [账务中心管理](#账务中心管理) |
+| 统一身份认证 | `iam` | [统一身份认证 (IAM) 管理](#统一身份认证-iam-管理) |
+| 服务器安全卫士 | `security` / `csscn` | [服务器安全卫士](#服务器安全卫士) · [服务器安全卫士（原生版）](#服务器安全卫士原生版) |
+| 关系数据库 MySQL 版 | `ctmysql` | [关系数据库MySQL版 (RDS)](#关系数据库mysql版-rds) |
+| 云专线 | `cda` | [云专线 (CDA) 管理](#云专线-cda-管理) |
+| 分布式消息 | `kafka` | [分布式消息服务 (Kafka) 管理](#分布式消息服务-kafka-管理) |
+| 云搜索 | `css` | [云搜索服务 (CSS) 管理](#云搜索服务-css-管理) |
+| 翼 MapReduce | `emr` | [翼 MapReduce (EMR) 管理](#翼-mapreduce-emr-管理) |
+| 云日志服务 | `lts` | [云日志服务 (LTS) 管理](#云日志服务-lts-管理) |
+| 弹性文件服务 | `sfs` | [弹性文件服务 (SFS) 管理](#弹性文件服务-sfs-管理) |
+| 海量文件服务 | `oceanfs` | [海量文件服务 (OceanFS) 管理](#海量文件服务-oceanfs-管理) |
+| 对象存储 | `zos` | [对象存储 (ZOS) 管理](#对象存储-zos-管理) |
+| 应用性能监控 | `apm` | [应用性能监控 (APM) 管理](#应用性能监控-apm-管理) |
+| 物理机 | `dps` | [物理机 (DPS) 管理](#物理机-dps-管理) |
+| 边缘安全加速 | `aone` | [边缘安全加速平台 (Aone) 管理](#边缘安全加速平台-aone-管理) |
+| 微服务引擎 | `mse` | [微服务引擎 (MSE) 管理](#微服务引擎-mse-管理) |
+| 云防火墙 | `cfw` | [云防火墙 (CFW) 管理](#云防火墙-cfw-管理) |
+| 容器镜像服务 | `swr` | [容器镜像服务 (SWR) 管理](#容器镜像服务-swr-管理) |
+| 其他分组 | `aiserver` `audit` `cloudpc` `ec` `ims` `network` `storage` | `ctyun-cli <模块> --help` 自查 |
+
+## 能力边界与使用约束
+
+### 1. 写操作边界
+
+- 1,051 个服务命令中约 950 个是**查询（只读）**类；约 100 个是**变更**类（命令名含 `create` `delete` `update` `modify` `bind` `unbind` `start` `stop` `restart` `reset` `renew` `change` `apply` `import` `grant` `revoke` `remove` `enable` `disable` `sync` `upload` 等）。
+- **默认只做查询**。确需变更时先跑对应的 `*-price` 询价命令、再用 `--help` 逐项核对参数；变更类命令**没有 dry-run**，参数错了就是真的改了云资源。
+- 变更类命令的典型分布：`cce create-cluster` / `cce delete-cluster`、`cce namespace create|update|delete`、`cce tag bind|unbind`、`redis create-instance`、`zos put-bucket-tagging`、`lts tag bind|unbind`、`lts transfer kafka-start|kafka-stop`、`monitor create-data-export-task`。
+
+### 2. 调用频率与分页
+
+- 天翼云 OpenAPI 常见限流为 **1000 次 / 60 秒**（云专线 CDA 接口文档明确标注该值），其他模块以各自接口文档为准。
+- 大结果集要**循环分页**并校验 `totalCount` 是否拉全；实测出现过只拿到部分数据的情况，拉全后再做统计。
+- 单页条数建议 ≤100（`ecs list --page-size 100` 实测每页正常返回 100 条；命令 docstring 里写的"最大 50"已过时）。
+- 分页参数名**各模块不统一**：`--page` / `--page-no` / `--size` / `--page-size`，用前先 `--help`。
+
+### 3. 稳定性与容错
+
+| 项 | 行为 |
+| --- | --- |
+| 超时 | 默认 30 秒，配置项 `[default] timeout`（`~/.ctyun/config`） |
+| 重试 | 默认 3 次，urllib3 `Retry` + 指数退避（`backoff_factor=1`），配置项 `[default] retry` |
+| 多端点容灾 | 云专线 CDA 客户端内置 4 个端点依次回退：`cda-global` → `cda` → `ctcda-global` → `global-cda`，全部失败才报"所有端点都失败" |
+| 缓存 | 仅 ECS 资源池列表走本地缓存（键 `ecs:regions:*`，TTL 24 小时）；其余命令不缓存 |
+| 清理缓存 | `ctyun-cli clear-cache` |
+| TLS | 自 v1.31.3 起全量校验证书，代理环境需保证证书链完整 |
+
+### 4. 凭据与数据安全
+
+- 凭据只放环境变量或 `~/.ctyun/config`（文件权限 600，目录 700），**不要写进代码、脚本、命令行历史或对话内容**。
+- `--debug` 会对 `eop-authorization` / `authorization` 头脱敏（仅保留前 8 字符），可以放心用于排查，但 debug 日志仍含资源 ID 等业务信息。
+- 内部接口文档（`todoapi/`）与凭据一律不得提交到仓库。
+
+## 异常处理与错误排查
+
+### 错误输出形态对照表
+
+以下均为实测输出，退出码可用 `echo $?` 复核：
+
+| 输出形态 | 触发条件 | 含义 | 处置 | 退出码 |
+| --- | --- | --- | --- | --- |
+| `Error: Missing option '--region-id'.` + Usage | 必填参数缺失 | Click 参数校验失败 | 补参数，或 `--help` 查必填项 | 2 |
+| `Error: No such command 'xxx'.` | 命令名拼错 | 层级不对 | `ctyun-cli <模块> --help` 确认子命令名 | 2 |
+| `API错误 [CODE]: message` + `请求ID: xxx` | 服务端返回业务错误 | 权限/资源状态/参数不合法 | 按 message 修正；带请求 ID 提工单 | 1 |
+| `错误: <异常文本>` | 本地异常（网络、解析） | 请求未完成 | 加 `--debug` 看异常栈 | 1 |
+| `查询失败: <message>` | 服务端非 800 业务码 | 参数或资源不被接受 | 核对资源池 ID、ID 是否存在 | 0 ⚠️ |
+| `所有端点都失败，已尝试: ...` | 多端点全部不可达 | 网络不通或鉴权失败 | 检查出口网络/白名单、AK/SK | 0/1 |
+| `⚠️  注意: 当前显示的是模拟数据，实际API调用失败` | ECS 接口异常后的兜底 | **数据是假的，不可用于任何结论** | 排查资源池/权限后重查 | 0 ⚠️ |
+| VPC 列表里出现 `测试VPC` / `vpc-test12345678` | VPC 接口返回 HTTP 401/403 时的兜底 | **静默返回模拟数据，连警告都没有** | 立刻用 `show-config` 核对 AK/SK | 0 ⚠️ |
+| `没有找到云主机实例` / `总数 0` | 结果集为空 | **可能是鉴权失败被静默吞掉** | 用 `show-config` 核对 AK/SK，换已知有资源的资源池复验 | 0 ⚠️ |
+| 表格里 `description` / `error` 两行 | 服务端 statusCode 900 | 资源池不存在或无权访问 | 改 `--region-id` | 0 ⚠️ |
+
+标 ⚠️ 的行最容易踩坑：**它们不报错、退出码也是 0**，脚本里必须显式校验内容，不能只看 `$?`。
+
+退出码的规律：Click 的参数/用法错误一律是 **2**；模块命令用 `handle_error` 装饰器捕获的异常是 **1**；而"查询失败: ..."这类业务失败是**打印后直接返回，退出码仍是 0**——EOP 签名类模块（ECS/VPC/CDA/Billing/Monitor…）普遍如此。
+
+### 两个真实失败样例
+
+参数错误（退出码 2）：
+
+```
+$ ctyun-cli cda gateway list --region-id 200000001852
+Usage: ctyun-cli cda gateway list [OPTIONS]
+Try 'ctyun-cli cda gateway list --help' for help.
+
+Error: Missing option '--account'.
+```
+
+资源池不存在 → ECS 回退到模拟数据（退出码仍是 0）：
+
+```
+$ ctyun-cli ecs list --region-id 999999999999
+... - WARNING - API返回错误: region info empty, please try again. If multiple attempts fail, please submit a work order
+云主机列表 (总计: 1 台, 当前页: 1 台, 第1/1页)
+⚠️  注意: 当前显示的是模拟数据，实际API调用失败
++-------------------+------------+---------+------------------+--------+--------+------------+
+| 实例ID            | 实例名称   | 状态    | IP地址           | 规格   | 镜像   | 到期时间   |
++===================+============+=========+==================+========+========+============+
+| instance-demo-001 | Web服务器1 | running | ['192.168.1.10'] | C0G    |        | 按量付费   |
++-------------------+------------+---------+------------------+--------+--------+------------+
+```
+
+> 看到 `instance-demo-001` / `Web服务器1` 这类样例数据，就说明这次查询根本没拿到真实数据。
+
+### 标准排查流程（5 步）
+
+```bash
+# 1. 配置对不对（区域、端点、超时、重试）
+ctyun-cli show-config
+
+# 2. 是不是参数问题（先看必填项和真实参数名）
+ctyun-cli <模块> <命令> --help
+
+# 3. 打开调试，看真实请求与响应
+ctyun-cli --debug <模块> <命令> --region-id 200000001852
+#   日志里关注：请求URL / 请求头(已脱敏) / 响应状态码 / 响应内容
+
+# 4. 换一个已知有数据的资源池复验，区分"资源为空"和"鉴权/网络失败"
+ctyun-cli ecs statistics --region-id 200000001852
+
+# 5. 需要原始响应时改用 JSON 输出核对
+ctyun-cli <模块> <命令> --output json
+```
+
+`--debug` 关键日志样例：
+
+```
+... - DEBUG - 请求URL: https://api.ctyun.cn/v4/ecs/list-instances
+... - DEBUG - 请求头: {'eop-authorization': 'CtyunEOP***', ...}     # 认证头已脱敏
+... - DEBUG - 响应状态码: 200
+... - DEBUG - 响应内容: {"returnObj": {"currentCount": 0, "totalCount": 0, ...}, "statusCode": 800}
+```
+
+最后一行就是"结果为空"的真相：HTTP 200 + `statusCode: 800` + 空数组，通常意味着 **AK/SK 无效或该资源池无权访问**，而不是"没有资源"。
+
+## 反模式与常见问题 (FAQ)
+
+### 反模式对照表
+
+| 反模式 | 后果 | 正确做法 |
+| --- | --- | --- |
+| 把 `--output json` 放在模块名之前 | 命令不认这个位置，输出仍是表格 | 命令自带该选项 → 放子命令之后；否则放模块之前（见快速开始） |
+| 直接把 CLI 输出喂给 `jq` | INFO 日志混进 stdout，`jq` 报 parse error | 先剥日志行：`ctyun-cli ... \| sed -n '/^[[{]/,$p'` |
+| 结果为空就下"没有资源"的结论 | 鉴权失败被静默吞掉 | 换已知有资源的资源池复验 + `--debug` 看响应体 |
+| 忽略 `⚠️ 当前显示的是模拟数据` | 拿 mock 数据做统计/告警 | 看到该提示即判定本次结果无效 |
+| 忽略数据里出现的 `测试VPC` / `vpc-test12345678` | VPC 在 401/403 时静默返回模拟数据 | 出现样例名称即判定本次结果无效 |
+| 截断实例 ID/磁盘 ID 以便显示 | 后续命令无法使用 | ID 保持完整（CLI 只截断镜像名称等长文本） |
+| 一次性拉全量再本地过滤 | 触发限流 / 只拿到部分数据 | 用服务端过滤参数 + 循环分页 + 校验 `totalCount` |
+| 假设分页参数都叫 `--page-size` | 参数报错 | 各模块不统一，先 `--help` |
+| 混用 `--region` 与 `--region-id` | 查不到数据 | 资源池 ID 用 `--region-id`，区域名用 `--region` |
+| 把 `todoapi/` 内部接口文档提交进仓库 | 内部资料外泄 | 保持在仓库外并加入 `.gitignore` |
+| 在脚本里硬编码 AK/SK | 凭据泄露 | 用环境变量或 `--profile` |
+| 不看 `--help` 直接执行变更类命令 | 误改云资源 | 变更前先跑 `*-price` 询价并逐项核对参数 |
+| CDA 网关类查询传 `gatewayName` | `vrfName can not be null` | 实际字段是 `vrfName`；VPC 查询用 `GET /v4/cda/vpc/list` |
+| 用 ECS/VPC/Security 的空结果做巡检结论 | 结论基于 mock 或空数据 | 必须同时校验"无 mock 提示"和 `totalCount` |
+
+### FAQ
+
+**Q1. 输出到底是表格还是 JSON？**
+A. 取决于命令实现。`ecs list --output json` 走的是命令自带的 `--output` 选项；`cda qos list` 没有这个选项，要用全局位置 `ctyun-cli --output json cda qos list ...`。不确定就 `--help` 看 Options。
+
+**Q2. 怎么知道一共能查到多少条？**
+A. 表格首行写明"总计 N 条"，JSON 里是 `totalCount`。**以 `totalCount` 为准，不要用 `--page-size` 当总数**。
+
+**Q3. 怎么翻页？**
+A. 表格末尾会提示"使用 --page 参数查看其他页"；JSON 用 `totalCount` 除以每页条数算页数循环拉取。
+
+**Q4. `--debug` 会泄露凭据吗？**
+A. 不会，认证头已脱敏为 `CtyunEOP***`。但 debug 日志含资源 ID、请求体等业务信息，分享前请自行脱敏。
+
+**Q5. 缓存会让结果不新鲜吗？**
+A. 只有 ECS 资源池列表走 24 小时本地缓存，其余命令每次实时请求。需要强制刷新就 `ctyun-cli clear-cache`。
+
+**Q6. 超时和重试能调吗？**
+A. 能。编辑 `~/.ctyun/config` 的 `[default]` 段：`timeout`（秒，默认 30）、`retry`（默认 3），改完用 `show-config` 复核。
+
+**Q7. 同一命令别人能跑、我这跑不出来？**
+A. 大概率是三选一：AK/SK 权限不同、`--region-id` 不同、企业项目不同。用 `iam list-projects --account-id <账号ID>` 确认可见的企业项目。
+
+**Q8. `test` 能证明网络通吗？**
+A. 不能。`test` 只校验配置读取与客户端初始化，不发真实 API 请求。网络与凭据是否可用，以任意一条真实查询命令的结果为准。
+
+**Q9. 能直接把结果喂给其他工具吗？**
+A. 可以，但要剥掉 INFO 日志行：
+
+```bash
+ctyun-cli ecs list --region-id 200000001852 --page-size 5 --output json 2>/dev/null \
+  | sed -n '/^[[{]/,$p' \
+  | jq '.[].instanceID'
+```
+
+**Q10. 可以用于生产环境的资源变更吗？**
+A. 可以执行，但请遵守：先询价、再 `--help` 核对参数、先在测试资源池验证、变更后立刻复查。变更类命令没有 dry-run 与回滚开关。
 
 ## 安装
 
@@ -1479,8 +1803,14 @@ ctyun-cli clear-cache
 ## 使用技巧
 
 ### JSON 输出便于脚本处理
+
+CLI 会把 INFO 日志打到 stdout，直接喂给 `jq` 会 parse 失败，先剥掉日志行：
+
 ```bash
-ctyun-cli ecs list --output json | jq '.[] | select(.status=="running")'
+# 命令自带 --output 选项时，放在子命令之后
+ctyun-cli ecs list --region-id 200000001852 --page-size 5 --output json 2>/dev/null \
+  | sed -n '/^[[{]/,$p' \
+  | jq '.[].instanceID'
 ```
 
 ### YAML 输出便于阅读
@@ -1490,7 +1820,8 @@ ctyun-cli vpc show --vpc-id vpc-xxx --output yaml
 
 ### 调试模式排查问题
 ```bash
-ctyun-cli ecs list --debug
+ctyun-cli ecs list --region-id 200000001852 --debug
+# 关注：请求URL / 请求头(已脱敏) / 响应状态码 / 响应内容
 ```
 
 ### 使用指定配置文件
@@ -1498,13 +1829,25 @@ ctyun-cli ecs list --debug
 ctyun-cli ecs list --profile production
 ```
 
+### 分页拉全并校验总数
+```bash
+# 先用 totalCount 判断应拉多少页，再循环，最后核对条数
+ctyun-cli ecs list --region-id 200000001852 --page-size 100 --output json \
+  | sed -n '/^[[{]/,$p' | jq 'length'
+```
+
 ## 注意事项
 
 1. 首次使用前必须先配置认证信息（推荐使用环境变量方式）
 2. 大部分命令需要指定资源 ID（如 instance-id、vpc-id 等）
-3. 建议使用 `--help` 查看具体子命令的详细参数
-4. 使用 JSON 输出格式便于与其他工具集成
-5. 按需查询大量数据时建议分页或使用过滤参数
+3. 建议使用 `--help` 查看具体子命令的详细参数（分页参数名各模块不统一）
+4. 使用 JSON 输出格式便于与其他工具集成，注意先剥掉 stdout 上的 INFO 日志行
+5. 按需查询大量数据时建议分页或使用过滤参数，并以 `totalCount` 校验是否拉全
+6. 结果为空不一定是没有资源，也可能是鉴权失败或资源池无权访问——详见 [异常处理与错误排查](#异常处理与错误排查)
+7. 看到 `⚠️ 当前显示的是模拟数据` 说明本次结果无效（ECS/VPC/Security 兜底行为）
+8. 默认只做查询；约 100 个变更类命令会真实修改云资源，执行前先询价并核对参数
+9. 资源 ID 不要截断，后续命令需要完整 ID
+10. 凭据与内部接口文档（`todoapi/`）一律不得进入代码仓库
 
 ## 询价 / 价格查询
 
