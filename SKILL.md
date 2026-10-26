@@ -357,8 +357,8 @@ pip install -e .
 
 ### 验证安装
 ```bash
-ctyun-cli --version
-ctyun-cli --help
+ctyun-cli --help          # 查看全部模块分组与全局选项
+pip show ctyun-cli       # 查看已安装版本（CLI 未提供 --version 选项）
 ```
 
 ## 配置与认证
@@ -465,11 +465,11 @@ ctyun-cli vpc route-table new-rules --route-table-id RTB_ID     # 新查询路�
 
 ### 安全组
 ```bash
-ctyun-cli vpc security list                                # 安全组列表
-ctyun-cli vpc security new-query                           # 新查询安全组列表
-ctyun-cli vpc security show --security-group-id SG_ID      # 安全组详情（含规则）
-ctyun-cli vpc security rules                               # 获取安全组规则列表
-ctyun-cli vpc security vms --security-group-id SG_ID       # 获取安全组绑定机器列表
+ctyun-cli vpc security-group list                                # 安全组列表
+ctyun-cli vpc security-group new-query                           # 新查询安全组列表
+ctyun-cli vpc security-group show --security-group-id SG_ID      # 安全组详情（含规则）
+ctyun-cli vpc security-group rules                               # 获取安全组规则列表
+ctyun-cli vpc security-group vms --security-group-id SG_ID       # 获取安全组绑定机器列表
 ```
 
 ### 弹性公网 IP EIP（9 个命令）
@@ -1232,7 +1232,10 @@ ctyun-cli security examples
 
 ### 主机防护
 ```bash
-ctyun-cli security wrapper --help
+ctyun-cli security scan --help        # 主机防护扫描
+ctyun-cli security summary --help     # 防护概览
+ctyun-cli security vuln-list --help   # 漏洞列表
+ctyun-cli security vuln-detail --help # 漏洞详情
 ```
 
 ### 防篡改更新
@@ -1681,8 +1684,60 @@ ctyun-cli dps stock --region-id REGION_ID --az-name AZ_NAME --device-type physic
 
 ## 边缘安全加速平台 (Aone) 管理
 
+覆盖域名、证书、开通服务/资源包、缓存刷新/预取、数据统计、CC/WAF/DDoS 防护，共 45 个命令。
+服务端点 `accessone-global.ctapi.ctyun.cn`（文档中的 `esa.ctapi.ctyun.cn` 对这些接口返回 404）。
+
+### 开通服务与资源包
 ```bash
-ctyun-cli aone --help
+# 查询账号下开通的服务基本信息（产品编码/状态/计费方式/版本/域名数）
+ctyun-cli aone query-service-detail
+ctyun-cli aone query-service-detail --product-code 020
+
+# 查询安全与加速资源包列表（无资源包时返回"未查询到资源包"）
+ctyun-cli aone query-resource-packages
+```
+
+### 域名协议类型
+```bash
+# --product-code 仅支持 009(应用加速) / 024(边缘接入)
+ctyun-cli aone query-domain-protocol --product-code 024 --domain aaa.ctyun.cn
+# 无域名接入方式时改用实例名
+ctyun-cli aone query-domain-protocol --product-code 024 --access-mode 2 --instance inst_name
+```
+
+### 带宽数据统计
+```bash
+# 时间戳为秒级；1m 粒度可查最近 7 天，5m/1h/24h 粒度可查最近 365 天
+ctyun-cli aone query-bandwidth-data --start-time 1662413100 --end-time 1662413700
+# 多维度聚合（domain / application_layer_protocol / province / isp 等）
+ctyun-cli aone query-bandwidth-data --start-time 1662413100 --end-time 1662413700 \
+  --group-by domain --group-by application_layer_protocol
+```
+> 表格同时给出 `带宽(bps)` 原值与 Kbps/Mbps/Gbps 可读值；`--output json` 保留接口原始数值。
+
+### 域名与证书
+```bash
+ctyun-cli aone query-domain-list --product-code 020
+ctyun-cli aone query-domain-list-basic --product-code 020
+ctyun-cli aone query-domain-status --domains aaa.ctyun.cn --product-code 020
+ctyun-cli aone query-cert-list --page 1 --per-page 100
+ctyun-cli aone query-cert-detail --name CERT_NAME
+```
+
+### 缓存刷新与预取
+```bash
+ctyun-cli aone query-refresh-tasks --type 0 --start-time 1662413100 --end-time 1662413700
+ctyun-cli aone query-preload-tasks --type 0 --start-time 1662413100 --end-time 1662413700
+```
+
+### 攻击与安全防护
+```bash
+# CC 攻击报告（时间为 yyyy-MM-dd HH:mm:ss 字符串）
+ctyun-cli aone query-cc-attack-report --product-code 020 \
+  --start-time "2026-10-01 00:00:00" --end-time "2026-10-02 00:00:00"
+
+ctyun-cli aone query-waf-config --domain aaa.ctyun.cn --product-code 020
+ctyun-cli aone query-tamper-protect --domain aaa.ctyun.cn --product-code 020
 ```
 
 ## 微服务引擎 (MSE) 管理
@@ -1889,9 +1944,12 @@ ctyun-cli vpc price bw create --region-id REGION_ID --bandwidth 10 --cycle-type 
 ctyun-cli vpc price bw modify --region-id REGION_ID --bandwidth-id BW_ID --bandwidth 20
 ctyun-cli vpc price bw renew --region-id REGION_ID --bandwidth-id BW_ID --cycle-type month --cycle-count 1
 ctyun-cli vpc price flow-package --region-id REGION_ID --cycle-type MONTH --cycle-count 1 --count 1 --spec 10
-ctyun-cli vpc price ipv6 create/modify/renew  # IPv6 带宽创建/变配/续订
+ctyun-cli vpc price ipv6 create --region-id REGION_ID ...   # IPv6 带宽创建询价
+ctyun-cli vpc price ipv6 modify --region-id REGION_ID ...   # IPv6 带宽变配询价
+ctyun-cli vpc price ipv6 renew --region-id REGION_ID ...    # IPv6 带宽续订询价
 ctyun-cli vpc price vpce --region-id REGION_ID --endpoint-service-id EPS_ID --endpoint-name test --subnet-id SUBNET_ID --vpc-id VPC_ID
-ctyun-cli vpc price l2gw create/renew  # L2GW 订购/续订询价
+ctyun-cli vpc price l2gw create --region-id REGION_ID ...   # L2GW 订购询价
+ctyun-cli vpc price l2gw renew --region-id REGION_ID ...    # L2GW 续订询价
 ctyun-cli vpc price to-cycle --region-id REGION_ID --resource-id EIP_ID --resource-type eip --cycle-type month --cycle-count 1  # 按需转包周期
 ctyun-cli vpc price to-ondemand --region-id REGION_ID --resource-id EIP_ID --resource-type eip  # 包周期转按需
 ```
@@ -1935,13 +1993,17 @@ ctyun-cli mse create-price --engine-type nacos --cycle-type 3 --cycle-cnt 1 --au
 
 ## 版本信息
 
-- **当前版本**: v1.32.3 (2026-10-25)
+- **当前版本**: v1.32.4 (2026-10-26)
 - **开源协议**: MIT
 - **Python 要求**: Python 3.8+
 - **API 覆盖**: 1,110+ 个 API
 - **命令数量**: 1,056+ 个命令
 - **服务模块**: 31+ 大服务模块
 - **最新功能**:
+  - 🔧 **Aone 边缘安全加速平台接口修复**（v1.32.4）：`query-domain-protocol` / `query-resource-packages` 修正 API 路径（此前分别返回 "API Not Found" 与"参数校验失败"）
+    - `query-service-detail` 表格重构：展开 attribute，补充产品类型/业务状态字典/计费方式/版本/域名数列
+    - `query-bandwidth-data` 表格增加可读时间与动态聚合维度列，带宽同时输出 bps 与 Kbps/Mbps/Gbps
+  - 🔧 **修复 4 处 `--help` 崩溃**（v1.32.4）：`click.Choice` 整型枚举导致 `vpc price nat create/modify`、`ctmysql batch-monitor`、`redis task-center-list` 帮助信息抛 TypeError
   - 🆕 **CDA 云专线新增 3 个 QOS 查询命令**（v1.32.3）：`qos list` / `qos policy list` / `qos rule list`
     - 修复 `cda vpc list` / `vpc count` / `static-route list` 传参，统一使用 `GET` + `vrfName`
     - 兼容真实响应字段 `vrfName` / `displayName` / `lineID` / `vpcList`，修复空路由字段导致的表格崩溃
