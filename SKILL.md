@@ -1,6 +1,6 @@
 ---
 name: ctyun-cli
-description: "天翼云 CLI 工具（ctyun-cli）—— 查询与运维天翼云/China Telecom Cloud 资源的命令行，覆盖 ECS 云主机、VPC 网络与 EIP、EBS 云硬盘、ELB 负载均衡、CCE 容器集群、Redis 缓存、MySQL、Kafka、监控指标与告警、账务账单与消费、IAM 企业项目、APM 应用性能、LTS 日志检索、ZOS 对象存储、SFS/OceanFS 存储、DPS 物理机、Aone 加速、MSE 微服务、CDA 云专线、CFW 云防火墙、SWR 容器镜像等 31+ 服务模块、1,128+ API、1,076+ 命令。当用户要查询/巡检/盘点/排查天翼云资源，要查云主机、VPC、弹性公网 IP、云硬盘、负载均衡、容器集群、Redis 实例、监控告警、账单消费、企业项目、日志、对象存储、云专线、防火墙、镜像，或要把天翼云数据批量导出为 JSON/表格做二次处理时使用。"
+description: "天翼云 CLI 工具（ctyun-cli）—— 查询与运维天翼云/China Telecom Cloud 资源的命令行，覆盖 ECS 云主机、VPC 网络与 EIP、EBS 云硬盘、ELB 负载均衡、CCE 容器集群、Redis 缓存、MySQL、Kafka、监控指标与告警、账务账单与消费、IAM 企业项目、APM 应用性能、LTS 日志检索、ZOS 对象存储、SFS/OceanFS 存储、DPS 物理机、Aone 加速、MSE 微服务、CDA 云专线、CFW 云防火墙、SWR 容器镜像等 31+ 服务模块、1,132+ API、1,080+ 命令。当用户要查询/巡检/盘点/排查天翼云资源，要查云主机、VPC、弹性公网 IP、云硬盘、负载均衡、容器集群、Redis 实例、监控告警、账单消费、企业项目、日志、对象存储、云专线、防火墙、镜像，或要把天翼云数据批量导出为 JSON/表格做二次处理时使用。"
 homepage: https://github.com/fengyucn/ctyun-cli
 pypi: https://pypi.org/project/ctyun-cli/
 metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"install":[{"id":"pip","kind":"pip","package":"ctyun-cli","bins":["ctyun-cli"],"label":"Install ctyun-cli (pip)"}]}}
@@ -10,7 +10,7 @@ metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"insta
 
 天翼云 CLI 工具，功能强大的企业级命令行工具，帮助您轻松管理天翼云资源。支持云服务器(ECS)、监控告警、安全防护、Redis分布式缓存、弹性负载均衡(ELB)、容器引擎(CCE)、VPC网络、费用查询等核心功能。
 
-**规模统计：** 71,000+行代码，1,128+个API，1,076+个命令，31+大服务模块
+**规模统计：** 71,000+行代码，1,132+个API，1,080+个命令，31+大服务模块
 
 ## 阅读路径
 
@@ -677,9 +677,15 @@ ctyun-cli elb pgelb-modify-price --region-id REGION_ID --elb-id ELB_ID --sla-nam
 
 ### ELB 查询类 API（19个）
 ```bash
-# 访问控制
+# 访问控制策略组（地址组，供监听器黑白名单引用）
 ctyun-cli elb list-access-controls --region-id REGION_ID
 ctyun-cli elb show-access-control --region-id REGION_ID --access-control-id AC_ID
+ctyun-cli elb create-access-control --region-id REGION_ID --name my-acl \
+  --source-ips 10.0.0.1/32,192.168.0.0/24 [--description 描述]
+ctyun-cli elb update-access-control --region-id REGION_ID --access-control-id AC_ID \
+  --source-ips 10.0.0.2/32,10.0.0.3/32   # 单次最多10条；也可 --name/--description
+ctyun-cli elb delete-access-control --region-id REGION_ID --access-control-id AC_ID
+# clientToken 不传自动生成 uuid4（幂等）
 
 # 规格/证书
 ctyun-cli elb list-sla --region-id REGION_ID
@@ -1687,7 +1693,7 @@ ctyun-cli dps stock --region-id REGION_ID --az-name AZ_NAME --device-type physic
 
 ## 边缘安全加速平台 (Aone) 管理
 
-覆盖域名、证书、开通服务/资源包、缓存刷新/预取、数据统计、访问控制、CC/WAF/DDoS 防护，共 48 个命令。
+覆盖域名、证书、开通服务/资源包、缓存刷新/预取、数据统计、访问控制、CC/WAF/DDoS 防护，共 49 个命令。
 服务端点 `accessone-global.ctapi.ctyun.cn`（文档中的 `esa.ctapi.ctyun.cn` 对这些接口返回 404）。
 
 ### 开通服务与资源包
@@ -1756,6 +1762,10 @@ ctyun-cli aone manage-domain --product-code 020 --domain www.ctyun.cn --action 1
 # 新增访问控制策略（--domains 可多次指定；每条规则一个 --config JSON 对象）
 ctyun-cli aone access-control-insert --product-code 020 --domains aaa.ctyun.cn \
   --config '{"mod":"ON","act":"BLOCK","ruleName":"block-bad-ip","ruleDesc":"封禁恶意IP","publicRange":[[{"equal":"TRUE","zone":"IP","publicContent":"1.2.3.4","operator":"STR"}]]}'
+
+# 修改访问控制策略（按 rule_id 更新，可设优先级 priority；规则JSON原样透传）
+ctyun-cli aone access-control-modify --domain aaa.ctyun.cn --product-code 020 \
+  --config '{"rule_id":17377,"act":"BLOCK","priority":1,"rule_name":"block-bad-ip"}'
 ```
 > 两个状态接口不要混用：`change-domain-status`（009/024，支持 `--access-mode 2 --instance` 无域名接入）与 `manage-domain`（010/011/020，按域名维度，状态流转须为 启用→停用→删除 正向切换）。`--action` 与 `--config` 中的 `act`（规则动作 LOG/ACCEPT/BLOCK/DROP/CHECK/JUMP/JCJS/PIC）也是两套枚举。
 
@@ -2054,13 +2064,15 @@ ctyun-cli mse create-price --engine-type nacos --cycle-type 3 --cycle-cnt 1 --au
 
 ## 版本信息
 
-- **当前版本**: v1.33.2 (2026-11-06)
+- **当前版本**: v1.33.4 (2026-11-06)
 - **开源协议**: MIT
 - **Python 要求**: Python 3.8+
-- **API 覆盖**: 1,128+ 个 API
-- **命令数量**: 1,076+ 个命令
+- **API 覆盖**: 1,132+ 个 API
+- **命令数量**: 1,080+ 个命令
 - **服务模块**: 31+ 大服务模块
 - **最新功能**:
+  - 🆕 **ELB 补齐访问控制策略组管理**（v1.33.4）：`create-access-control` / `update-access-control` / `delete-access-control`（`/v4/elb/*-access-control`），clientToken 不传自动生成；更新时 sourceIps 单次最多 10 条
+  - 🆕 **Aone 新增 `access-control-modify`**（v1.33.3）：按 `rule_id` 修改访问控制策略并设置 `priority`（`POST /ctapi/v1/accessControlConf/updateAccessControl`），规则 JSON 原样透传
   - 🆕 **Aone 新增 `manage-domain`**（v1.33.2）：边缘云版产品（010/011/020）按域名停用/启用/删除（`POST /ctapi/v1/accessone/domain/manage`）；与 `change-domain-status`（009/024，支持无域名接入）是两个接口；状态流转须为 启用→停用→删除
   - 🆕 **SWR 容器镜像服务新增 16 个只读命令**（v1.33.1）：实例详情/配额/个数/资源池/存储配置、命名空间、仓库详情、Tag 列表与详情、制品列表与详情、Chart 命名空间/仓库/版本；SWR 由 2 个扩到 18 个命令
     - 分页统一 `--page-num` / `--page-size`（默认 10，最大 50）；链路 实例→命名空间→仓库→Tag/制品
