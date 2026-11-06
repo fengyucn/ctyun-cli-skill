@@ -1,6 +1,6 @@
 ---
 name: ctyun-cli
-description: "天翼云 CLI 工具（ctyun-cli）—— 查询与运维天翼云/China Telecom Cloud 资源的命令行，覆盖 ECS 云主机、VPC 网络与 EIP、EBS 云硬盘、ELB 负载均衡、CCE 容器集群、Redis 缓存、MySQL、Kafka、监控指标与告警、账务账单与消费、IAM 企业项目、APM 应用性能、LTS 日志检索、ZOS 对象存储、SFS/OceanFS 存储、DPS 物理机、Aone 加速、MSE 微服务、CDA 云专线、CFW 云防火墙、SWR 容器镜像等 31+ 服务模块、1,110+ API、1,056+ 命令。当用户要查询/巡检/盘点/排查天翼云资源，要查云主机、VPC、弹性公网 IP、云硬盘、负载均衡、容器集群、Redis 实例、监控告警、账单消费、企业项目、日志、对象存储、云专线、防火墙、镜像，或要把天翼云数据批量导出为 JSON/表格做二次处理时使用。"
+description: "天翼云 CLI 工具（ctyun-cli）—— 查询与运维天翼云/China Telecom Cloud 资源的命令行，覆盖 ECS 云主机、VPC 网络与 EIP、EBS 云硬盘、ELB 负载均衡、CCE 容器集群、Redis 缓存、MySQL、Kafka、监控指标与告警、账务账单与消费、IAM 企业项目、APM 应用性能、LTS 日志检索、ZOS 对象存储、SFS/OceanFS 存储、DPS 物理机、Aone 加速、MSE 微服务、CDA 云专线、CFW 云防火墙、SWR 容器镜像等 31+ 服务模块、1,128+ API、1,076+ 命令。当用户要查询/巡检/盘点/排查天翼云资源，要查云主机、VPC、弹性公网 IP、云硬盘、负载均衡、容器集群、Redis 实例、监控告警、账单消费、企业项目、日志、对象存储、云专线、防火墙、镜像，或要把天翼云数据批量导出为 JSON/表格做二次处理时使用。"
 homepage: https://github.com/fengyucn/ctyun-cli
 pypi: https://pypi.org/project/ctyun-cli/
 metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"install":[{"id":"pip","kind":"pip","package":"ctyun-cli","bins":["ctyun-cli"],"label":"Install ctyun-cli (pip)"}]}}
@@ -10,7 +10,7 @@ metadata: {"clawdbot":{"emoji":"☁️","requires":{"bins":["ctyun-cli"]},"insta
 
 天翼云 CLI 工具，功能强大的企业级命令行工具，帮助您轻松管理天翼云资源。支持云服务器(ECS)、监控告警、安全防护、Redis分布式缓存、弹性负载均衡(ELB)、容器引擎(CCE)、VPC网络、费用查询等核心功能。
 
-**规模统计：** 71,000+行代码，1,110+个API，1,056+个命令，31+大服务模块
+**规模统计：** 71,000+行代码，1,128+个API，1,076+个命令，31+大服务模块
 
 ## 阅读路径
 
@@ -122,7 +122,7 @@ $ ctyun-cli ecs list --region-id 200000001852 --page-size 1 --output json
 | 23 | 检索日志 | `lts search logs-v1`、`lts unit list-v1` | `--region-id` | 支持 SQL 分析语句与游标翻页 |
 | 24 | 查云专线（网关/专线/路由/QOS） | `cda gateway list`、`cda physical-line list`、`cda static-route list`、`cda qos list` | `--region-id` `--line-id` | 网关类需 `--account`；实际字段为 `vrfName` |
 | 25 | 查云防火墙资产 / 防护策略 | `cfw asset list`、`cfw policy list` | `--region-id` | |
-| 26 | 查容器镜像 | `swr list-instances`、`swr list-repositories` | `--region-id` | |
+| 26 | 查容器镜像 | `swr list-instances`、`swr list-namespaces`、`swr list-repositories`、`swr list-tags` | `--region-id` `--instance-id` `--repository-id` | 详情用 `get-instance`/`get-namespace`/`get-repository`/`get-tag` |
 | 27 | 查应用性能 / 调用链 | `apm app list`、`apm trace list` | `--region-id` | |
 | 28 | 查物理机 | `dps list`、`dps describe` | `--region-id` | |
 | 29 | 查微服务引擎 / Nacos | `mse instance list`、`mse nacos service list` | `--region-id` | |
@@ -642,7 +642,10 @@ ctyun-cli elb loadbalancer list
 
 ### 监听器管理
 ```bash
-ctyun-cli elb listener --help
+ctyun-cli elb listener list --region-id REGION_ID
+ctyun-cli elb listener get --region-id REGION_ID --listener-id LISTENER_ID
+# 停止监听器（--client-token 可选，用于幂等）
+ctyun-cli elb listener stop --region-id REGION_ID --listener-id LISTENER_ID [--client-token TOKEN]
 ```
 
 ### 目标组管理
@@ -1684,7 +1687,7 @@ ctyun-cli dps stock --region-id REGION_ID --az-name AZ_NAME --device-type physic
 
 ## 边缘安全加速平台 (Aone) 管理
 
-覆盖域名、证书、开通服务/资源包、缓存刷新/预取、数据统计、CC/WAF/DDoS 防护，共 45 个命令。
+覆盖域名、证书、开通服务/资源包、缓存刷新/预取、数据统计、访问控制、CC/WAF/DDoS 防护，共 48 个命令。
 服务端点 `accessone-global.ctapi.ctyun.cn`（文档中的 `esa.ctapi.ctyun.cn` 对这些接口返回 404）。
 
 ### 开通服务与资源包
@@ -1739,6 +1742,22 @@ ctyun-cli aone query-cc-attack-report --product-code 020 \
 ctyun-cli aone query-waf-config --domain aaa.ctyun.cn --product-code 020
 ctyun-cli aone query-tamper-protect --domain aaa.ctyun.cn --product-code 020
 ```
+
+### 域名状态与访问控制
+```bash
+# 应用加速/边缘接入（009/024）按实例或域名停用 / 启用 / 删除（--action 1 停用, 2 启用, 3 删除）
+ctyun-cli aone change-domain-status --product-code 024 --action 1 --domain aaa.ctyun.cn
+# 无域名接入方式时改用实例名（--access-mode 2）
+ctyun-cli aone change-domain-status --product-code 024 --action 2 --access-mode 2 --instance inst_name
+
+# 边缘云版产品（010/011/020）按域名停用 / 启用 / 删除（与上面 009/024 的接口不同）
+ctyun-cli aone manage-domain --product-code 020 --domain www.ctyun.cn --action 1
+
+# 新增访问控制策略（--domains 可多次指定；每条规则一个 --config JSON 对象）
+ctyun-cli aone access-control-insert --product-code 020 --domains aaa.ctyun.cn \
+  --config '{"mod":"ON","act":"BLOCK","ruleName":"block-bad-ip","ruleDesc":"封禁恶意IP","publicRange":[[{"equal":"TRUE","zone":"IP","publicContent":"1.2.3.4","operator":"STR"}]]}'
+```
+> 两个状态接口不要混用：`change-domain-status`（009/024，支持 `--access-mode 2 --instance` 无域名接入）与 `manage-domain`（010/011/020，按域名维度，状态流转须为 启用→停用→删除 正向切换）。`--action` 与 `--config` 中的 `act`（规则动作 LOG/ACCEPT/BLOCK/DROP/CHECK/JUMP/JCJS/PIC）也是两套枚举。
 
 ## 微服务引擎 (MSE) 管理
 
@@ -1824,7 +1843,9 @@ ctyun-cli cfw price new-n100 --region-id REGION_ID --orders-json '[{...}]'
 
 ## 容器镜像服务 (SWR) 管理
 
-终端节点 `crs-global.ctapi.ctyun.cn`，共 2 个查询命令。
+终端节点 `crs-global.ctapi.ctyun.cn`，共 18 个查询命令（文档全量 269 个接口，当前覆盖只读链路：实例 → 命名空间 → 仓库 → Tag → 制品 → Chart）。
+
+### 实例
 
 ```bash
 # 镜像实例列表（支持名称过滤；--all-region 遍历全部资源池）
@@ -1832,9 +1853,49 @@ ctyun-cli swr list-instances --region-id REGION_ID
 ctyun-cli swr list-instances --region-id REGION_ID --instance-name my-swr
 ctyun-cli swr list-instances --region-id REGION_ID --all-region
 
-# 镜像仓库列表（region-id 取实例列表返回的 region）
-ctyun-cli swr list-repositories --region-id REGION_ID --instance-id INSTANCE_ID --page-size 50
+# 实例详情（实例类型、状态、企业项目、公网/内网地址、Chart 地址）
+ctyun-cli swr get-instance --region-id REGION_ID --instance-id INSTANCE_ID
+
+# 实例配额（命名空间/仓库配额与用量、存储配额）
+ctyun-cli swr get-instance-usage --region-id REGION_ID --instance-id INSTANCE_ID
+
+# 实例个数 / 对象存储配置 / 可用资源池
+ctyun-cli swr get-instance-count --region-id REGION_ID [--all-region]
+ctyun-cli swr get-storage-config --region-id REGION_ID --instance-id INSTANCE_ID
+ctyun-cli swr list-instance-regions --region-id REGION_ID
 ```
+
+### 命名空间 / 仓库 / Tag / 制品
+
+```bash
+# 命名空间列表与详情
+ctyun-cli swr list-namespaces --region-id REGION_ID --instance-id INSTANCE_ID
+ctyun-cli swr get-namespace --region-id REGION_ID --instance-id INSTANCE_ID --namespace-name hb
+
+# 仓库列表与详情（repositoryId 取列表返回的 repositoryId 列）
+ctyun-cli swr list-repositories --region-id REGION_ID --instance-id INSTANCE_ID --page-size 50
+ctyun-cli swr get-repository --region-id REGION_ID --instance-id INSTANCE_ID --repository-id REPO_ID
+
+# 镜像版本（Tag）
+ctyun-cli swr list-tags --region-id REGION_ID --instance-id INSTANCE_ID --repository-id REPO_ID
+ctyun-cli swr get-tag --region-id REGION_ID --instance-id INSTANCE_ID --repository-id REPO_ID --tag-name v1.0.0
+
+# 制品（Artifact）
+ctyun-cli swr list-artifacts --region-id REGION_ID --instance-id INSTANCE_ID --repository-id REPO_ID
+ctyun-cli swr get-artifact --region-id REGION_ID --instance-id INSTANCE_ID --repository-id REPO_ID --reference v1.0.0
+```
+
+### Chart（Helm）
+
+```bash
+ctyun-cli swr list-chart-namespaces --region-id REGION_ID --instance-id INSTANCE_ID
+ctyun-cli swr get-chart-namespace --region-id REGION_ID --instance-id INSTANCE_ID --namespace-name hb
+ctyun-cli swr list-chart-repositories --region-id REGION_ID --instance-id INSTANCE_ID
+ctyun-cli swr list-chart-tags --region-id REGION_ID --instance-id INSTANCE_ID --repository-id REPO_ID
+```
+
+> 链路关系：`list-instances` → `instanceId` → `list-namespaces` / `list-repositories` → `repositoryId` → `list-tags` / `list-artifacts`。
+> 分页参数为 `--page-num` / `--page-size`（默认 10，最大 50），`--output json` 返回原始 `returnObj.records`。
 
 ## 网络管理
 
@@ -1993,13 +2054,19 @@ ctyun-cli mse create-price --engine-type nacos --cycle-type 3 --cycle-cnt 1 --au
 
 ## 版本信息
 
-- **当前版本**: v1.32.4 (2026-10-26)
+- **当前版本**: v1.33.2 (2026-11-06)
 - **开源协议**: MIT
 - **Python 要求**: Python 3.8+
-- **API 覆盖**: 1,110+ 个 API
-- **命令数量**: 1,056+ 个命令
+- **API 覆盖**: 1,128+ 个 API
+- **命令数量**: 1,076+ 个命令
 - **服务模块**: 31+ 大服务模块
 - **最新功能**:
+  - 🆕 **Aone 新增 `manage-domain`**（v1.33.2）：边缘云版产品（010/011/020）按域名停用/启用/删除（`POST /ctapi/v1/accessone/domain/manage`）；与 `change-domain-status`（009/024，支持无域名接入）是两个接口；状态流转须为 启用→停用→删除
+  - 🆕 **SWR 容器镜像服务新增 16 个只读命令**（v1.33.1）：实例详情/配额/个数/资源池/存储配置、命名空间、仓库详情、Tag 列表与详情、制品列表与详情、Chart 命名空间/仓库/版本；SWR 由 2 个扩到 18 个命令
+    - 分页统一 `--page-num` / `--page-size`（默认 10，最大 50）；链路 实例→命名空间→仓库→Tag/制品
+    - 资源池列表实际响应字段为 `regionId`/`regionCode`/`regionName`（文档写作 `region`），已兼容两种
+  - 🆕 **Aone 新增 2 个管理命令**（v1.33.0）：`change-domain-status`（停用/启用/删除域名，支持域名接入与无域名接入）、`access-control-insert`（多域名批量下发访问控制策略）
+  - 🆕 **ELB 新增 `listener stop`**（v1.33.0）：停止监听器（`POST /v4/elb/stop-listener`，支持 `--client-token` 幂等）
   - 🔧 **Aone 边缘安全加速平台接口修复**（v1.32.4）：`query-domain-protocol` / `query-resource-packages` 修正 API 路径（此前分别返回 "API Not Found" 与"参数校验失败"）
     - `query-service-detail` 表格重构：展开 attribute，补充产品类型/业务状态字典/计费方式/版本/域名数列
     - `query-bandwidth-data` 表格增加可读时间与动态聚合维度列，带宽同时输出 bps 与 Kbps/Mbps/Gbps
